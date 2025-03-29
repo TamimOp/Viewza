@@ -67,4 +67,28 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User registered successfully"));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  //get user details from frontend
+  const { email, password } = req.body;
+  //validation - not empty
+  if ([email, password].some((field) => field?.trim() === "")) {
+    throw new ApiError(400, "Please fill in all fields");
+  }
+  //check if user exists
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+  //check if password is correct
+  if (!(await user.comparePassword(password))) {
+    throw new ApiError(401, "Invalid password");
+  }
+  //generate token
+  const token = await user.generateToken();
+  //return response
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { token }, "Login successful"));
+});
+
+export { registerUser, loginUser };
